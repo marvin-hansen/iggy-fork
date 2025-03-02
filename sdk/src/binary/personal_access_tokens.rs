@@ -1,5 +1,6 @@
 use crate::binary::binary_client::BinaryClient;
-use crate::binary::{fail_if_not_authenticated, mapper, ClientState};
+use crate::binary::binary_client_state::ClientState;
+use crate::binary::{fail_if_not_authenticated, mapper};
 use crate::client::PersonalAccessTokenClient;
 use crate::error::IggyError;
 use crate::models::identity_info::IdentityInfo;

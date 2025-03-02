@@ -4,10 +4,10 @@ use crate::error::IggyError;
 use crate::utils::duration::IggyDuration;
 use async_trait::async_trait;
 use bytes::Bytes;
-use derive_more::Display;
 
 #[allow(deprecated)]
 pub mod binary_client;
+mod binary_client_state;
 #[allow(deprecated)]
 pub mod consumer_groups;
 #[allow(deprecated)]
@@ -28,28 +28,7 @@ pub mod topics;
 #[allow(deprecated)]
 pub mod users;
 
-/// The state of the client.
-#[derive(Debug, Copy, Clone, PartialEq, Display)]
-pub enum ClientState {
-    /// The client is shutdown.
-    #[display("shutdown")]
-    Shutdown,
-    /// The client is disconnected.
-    #[display("disconnected")]
-    Disconnected,
-    /// The client is connecting.
-    #[display("connecting")]
-    Connecting,
-    /// The client is connected.
-    #[display("connected")]
-    Connected,
-    /// The client is authenticating.
-    #[display("authenticating")]
-    Authenticating,
-    /// The client is connected and authenticated.
-    #[display("authenticated")]
-    Authenticated,
-}
+pub use binary_client_state::ClientState;
 
 #[async_trait]
 pub trait BinaryTransport {
