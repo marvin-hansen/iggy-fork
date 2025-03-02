@@ -103,18 +103,27 @@ impl TcpClient {
                 error!("Failed to establish TCP connection to the server: {error}",);
                 IggyError::CannotEstablishConnection
             })?;
+            // Get addresses immediately (these don't need to be async as they're just socket metadata operations)
             client_address = stream.local_addr().map_err(|error| {
-                error!("Failed to get the local address of the client: {error}",);
+                error!("Failed to get the local address of the client: {error}");
                 IggyError::CannotEstablishConnection
             })?;
             remote_address = stream.peer_addr().map_err(|error| {
-                error!("Failed to get the remote address of the server: {error}",);
+                error!("Failed to get the remote address of the server: {error}");
                 IggyError::CannotEstablishConnection
             })?;
+
+            // Store client address immediately
             self.client_address.store(Some(client_address));
 
-            if let Err(e) = stream.set_nodelay(self.config.nodelay) {
-                error!("Failed to set the nodelay option on the client: {e}, continuing...",);
+            // Apply socket optimization - this might have async operations internally
+            if let Err(e) = self.config.socket_config.apply_to_stream(&stream) {
+                error!("Failed to apply socket optimizations: {e}, continuing with default settings...");
+            } else if tracing::enabled!(tracing::Level::TRACE) {
+                trace!(
+                    "Applied socket optimizations with profile: {:?}",
+                    self.config.socket_config.optimization_profile()
+                );
             }
 
             if !tls_enabled {

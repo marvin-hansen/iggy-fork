@@ -92,26 +92,6 @@ impl TcpClient {
         })
     }
 
-    /// Gets the current state of the client without requiring await.
-    /// This is a fast, non-blocking version of get_state() from the BinaryProtocol trait.
-    ///
-    /// # Returns
-    ///
-    /// The current ClientState of the client.
-    pub(crate) fn get_state_sync(&self) -> ClientState {
-        let state_value = self.state.load(Ordering::Relaxed);
-        ClientState::from(state_value)
-    }
-
-    /// Fast, non-blocking check if the client is connected.
-    ///
-    /// # Returns
-    ///
-    /// true if the client is in Connected state, false otherwise.
-    pub(crate) fn is_connected(&self) -> bool {
-        self.state.load(Ordering::Relaxed) == ClientState::Connected as u8
-    }
-
     /// Fast, non-blocking check if the client is disconnected.
     ///
     /// # Returns
@@ -121,12 +101,34 @@ impl TcpClient {
         self.state.load(Ordering::Relaxed) == ClientState::Disconnected as u8
     }
 
+    /// Sync version of is_disconnected for performance-critical paths.
+    /// Functionally identical to is_disconnected but explicitly named for clarity.
+    ///
+    /// # Returns
+    ///
+    /// true if the client is in Disconnected state, false otherwise.
+    #[inline(always)]
+    pub(crate) fn is_disconnected_sync(&self) -> bool {
+        self.state.load(Ordering::Relaxed) == ClientState::Disconnected as u8
+    }
+
     /// Fast, non-blocking check if the client is shut down.
     ///
     /// # Returns
     ///
     /// true if the client is in Shutdown state, false otherwise.
     pub(crate) fn is_shutdown(&self) -> bool {
+        self.state.load(Ordering::Relaxed) == ClientState::Shutdown as u8
+    }
+
+    /// Sync version of is_shutdown for performance-critical paths.
+    /// Functionally identical to is_shutdown but explicitly named for clarity.
+    ///
+    /// # Returns
+    ///
+    /// true if the client is in Shutdown state, false otherwise.
+    #[inline(always)]
+    pub(crate) fn is_shutdown_sync(&self) -> bool {
         self.state.load(Ordering::Relaxed) == ClientState::Shutdown as u8
     }
 
