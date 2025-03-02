@@ -1,4 +1,6 @@
 use crate::client::AutoLogin;
+pub(crate) use crate::tcp::config_reconnection::TcpClientReconnectionConfig;
+use crate::tcp::config_socket::TcpSocketConfig;
 use crate::utils::duration::IggyDuration;
 use std::str::FromStr;
 
@@ -7,6 +9,8 @@ use std::str::FromStr;
 pub struct TcpClientConfig {
     /// The address of the Iggy server.
     pub server_address: String,
+    /// The configuration for the TCP socket.
+    pub socket_config: TcpSocketConfig,
     /// Whether to use TLS when connecting to the server.
     pub tls_enabled: bool,
     /// The domain to use for TLS when connecting to the server.
@@ -23,18 +27,11 @@ pub struct TcpClientConfig {
     pub nodelay: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct TcpClientReconnectionConfig {
-    pub enabled: bool,
-    pub max_retries: Option<u32>,
-    pub interval: IggyDuration,
-    pub reestablish_after: IggyDuration,
-}
-
 impl Default for TcpClientConfig {
     fn default() -> TcpClientConfig {
         TcpClientConfig {
             server_address: "127.0.0.1:8090".to_string(),
+            socket_config: TcpSocketConfig::default(),
             tls_enabled: false,
             tls_domain: "localhost".to_string(),
             tls_ca_file: None,
@@ -42,17 +39,6 @@ impl Default for TcpClientConfig {
             auto_login: AutoLogin::Disabled,
             reconnection: TcpClientReconnectionConfig::default(),
             nodelay: false,
-        }
-    }
-}
-
-impl Default for TcpClientReconnectionConfig {
-    fn default() -> TcpClientReconnectionConfig {
-        TcpClientReconnectionConfig {
-            enabled: true,
-            max_retries: None,
-            interval: IggyDuration::from_str("1s").unwrap(),
-            reestablish_after: IggyDuration::from_str("5s").unwrap(),
         }
     }
 }

@@ -1,5 +1,6 @@
 pub mod config_client;
-mod config_socket;
+pub mod config_reconnection;
+pub mod config_socket;
 pub mod tcp_client;
 mod tcp_client_binary_transport;
 mod tcp_client_connect;

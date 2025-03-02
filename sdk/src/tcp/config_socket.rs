@@ -2,32 +2,32 @@
 pub struct TcpSocketConfig {
     /// Size of the socket receive buffer in bytes (SO_RCVBUF)
     /// Default: 4 MB (4194304 bytes)
-    receive_buffer_size: u32, // 4 bytes
+    pub receive_buffer_size: u32, // 4 bytes
     /// Size of the socket send buffer in bytes (SO_SNDBUF)
     /// Default: 4 MB (4194304 bytes)
-    send_buffer_size: u32, // 4 bytes
+    pub send_buffer_size: u32, // 4 bytes
     /// Enable/disable TCP_QUICKACK to disable delayed ACKs
     /// Default: true (enabled)
-    quick_ack: bool, // 1 byte
+    pub quick_ack: bool, // 1 byte
     /// Enable/disable TCP_NODELAY to disable Nagle's algorithm
     /// Default: true (enabled)
-    nodelay: bool, // 1 byte
+    pub nodelay: bool, // 1 byte
     /// Enable/disable TCP keepalive (SO_KEEPALIVE)
     /// Default: true (enabled)
-    keepalive: bool, // 1 byte
+    pub keepalive: bool, // 1 byte
     /// TCP keepalive time in seconds (TCP_KEEPIDLE)
     /// Default: 60 seconds
-    keepalive_time: u32, // 4 bytes
+    pub keepalive_time: u32, // 4 bytes
     /// TCP keepalive interval in seconds (TCP_KEEPINTVL)
     /// Default: 10 seconds
-    keepalive_interval: u32, // 4 bytes
+    pub keepalive_interval: u32, // 4 bytes
     /// TCP keepalive probe count (TCP_KEEPCNT)
     /// Default: 6 probes
-    keepalive_probes: u32, // 4 bytes
+    pub keepalive_probes: u32, // 4 bytes
     /// Enable/disable latency optimization mode
     /// When enabled, smaller buffer sizes will be used to reduce latency
     /// Default: false (disabled)
-    latency_mode: bool, // 1 byte
+    pub latency_mode: bool, // 1 byte
     /// Size of the socket receive buffer in bytes when in latency mode
     /// Default: 8 KB (8192 bytes)
     latency_mode_receive_buffer_size: u32, // 4 bytes
@@ -66,42 +66,6 @@ impl TcpSocketConfig {
         }
     }
 
-    pub fn receive_buffer_size(&self) -> u32 {
-        self.receive_buffer_size
-    }
-
-    pub fn send_buffer_size(&self) -> u32 {
-        self.send_buffer_size
-    }
-
-    pub fn quick_ack(&self) -> bool {
-        self.quick_ack
-    }
-
-    pub fn nodelay(&self) -> bool {
-        self.nodelay
-    }
-
-    pub fn keepalive(&self) -> bool {
-        self.keepalive
-    }
-
-    pub fn keepalive_time(&self) -> u32 {
-        self.keepalive_time
-    }
-
-    pub fn keepalive_interval(&self) -> u32 {
-        self.keepalive_interval
-    }
-
-    pub fn keepalive_probes(&self) -> u32 {
-        self.keepalive_probes
-    }
-
-    pub fn latency_mode(&self) -> bool {
-        self.latency_mode
-    }
-
     pub fn latency_mode_receive_buffer_size(&self) -> u32 {
         if self.latency_mode {
             // Use latency mode buffer size when in latency mode
@@ -135,31 +99,11 @@ impl Default for TcpSocketConfig {
             keepalive_time: 60,
             keepalive_interval: 10,
             keepalive_probes: 6,
-            // Disable low latency mode by default as per requirements
+            // Disable low latency mode by default
             latency_mode: false,
             // 8 KB buffers for latency optimization
             latency_mode_receive_buffer_size: 8 * 1024,
             latency_mode_send_buffer_size: 8 * 1024,
         }
-    }
-}
-
-impl std::fmt::Display for TcpSocketConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "TcpSocketConfig {{ receive_buffer_size: {}, send_buffer_size: {}, quick_ack: {}, nodelay: {}, keepalive: {}, keepalive_time: {}, keepalive_interval: {}, keepalive_probes: {}, latency_mode: {}, latency_mode_receive_buffer_size: {}, latency_mode_send_buffer_size: {} }}",
-            self.receive_buffer_size,
-            self.send_buffer_size,
-            self.quick_ack,
-            self.nodelay,
-            self.keepalive,
-            self.keepalive_time,
-            self.keepalive_interval,
-            self.keepalive_probes,
-            self.latency_mode,
-            self.latency_mode_receive_buffer_size,
-            self.latency_mode_send_buffer_size,
-        )
     }
 }

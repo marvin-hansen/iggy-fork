@@ -109,6 +109,7 @@ impl ClientProviderConfig {
             TCP_TRANSPORT => {
                 config.tcp = Some(Arc::new(TcpClientConfig {
                     server_address: args.tcp_server_address,
+                    socket_config: Default::default(),
                     tls_enabled: args.tcp_tls_enabled,
                     tls_domain: args.tcp_tls_domain,
                     tls_ca_file: args.tcp_tls_ca_file,

@@ -627,6 +627,7 @@ impl From<ConnectionString> for TcpClientConfig {
             reconnection: connection_string.options.reconnection,
             heartbeat_interval: connection_string.options.heartbeat_interval,
             nodelay: connection_string.options.nodelay,
+            socket_config: Default::default(),
         }
     }
 }
