@@ -1,7 +1,7 @@
 use crate::test_server::ClientFactory;
 use async_trait::async_trait;
 use iggy::client::Client;
-use iggy::tcp::config::TcpClientConfig;
+use iggy::tcp::config_client::TcpClientConfig;
 use iggy::tcp::tcp_client::TcpClient;
 use std::sync::Arc;
 

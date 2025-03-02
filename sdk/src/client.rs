@@ -19,7 +19,7 @@ use crate::models::topic::{Topic, TopicDetails};
 use crate::models::user_info::{UserInfo, UserInfoDetails};
 use crate::models::user_status::UserStatus;
 use crate::snapshot::{SnapshotCompression, SystemSnapshotType};
-use crate::tcp::config::{TcpClientConfig, TcpClientReconnectionConfig};
+use crate::tcp::config_client::{TcpClientConfig, TcpClientReconnectionConfig};
 use crate::utils::duration::IggyDuration;
 use crate::utils::expiry::IggyExpiry;
 use crate::utils::personal_access_token_expiry::PersonalAccessTokenExpiry;

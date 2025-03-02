@@ -2464,6 +2464,7 @@ dependencies = [
  "comfy-table",
  "convert_case 0.7.1",
  "crc32fast",
+    "crossbeam-utils",
  "dashmap",
  "derive_more",
  "dirs",

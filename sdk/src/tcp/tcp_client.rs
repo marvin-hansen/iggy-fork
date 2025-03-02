@@ -3,7 +3,7 @@ use crate::binary::ClientState;
 use crate::client::{AutoLogin, Client, ConnectionString};
 use crate::diagnostic::DiagnosticEvent;
 use crate::error::IggyError;
-use crate::tcp::config::TcpClientConfig;
+use crate::tcp::config_client::TcpClientConfig;
 use crate::tcp::tcp_connection_stream_kind::ConnectionStreamKind;
 use crate::utils::duration::IggyDuration;
 use crate::utils::timestamp::IggyTimestamp;
@@ -26,33 +26,6 @@ pub struct TcpClient {
     pub(crate) events: (Sender<DiagnosticEvent>, Receiver<DiagnosticEvent>),
     pub(crate) connected_at: Mutex<Option<IggyTimestamp>>,
 }
-
-impl Default for TcpClient {
-    fn default() -> Self {
-        TcpClient::create(Arc::new(TcpClientConfig::default())).unwrap()
-    }
-}
-
-#[async_trait]
-impl Client for TcpClient {
-    async fn connect(&self) -> Result<(), IggyError> {
-        TcpClient::connect(self).await
-    }
-
-    async fn disconnect(&self) -> Result<(), IggyError> {
-        TcpClient::disconnect(self).await
-    }
-
-    async fn shutdown(&self) -> Result<(), IggyError> {
-        TcpClient::shutdown(self).await
-    }
-
-    async fn subscribe_events(&self) -> Receiver<DiagnosticEvent> {
-        self.events.1.clone()
-    }
-}
-
-impl BinaryClient for TcpClient {}
 
 impl TcpClient {
     /// Create a new TCP client for the provided server address.
@@ -111,5 +84,32 @@ impl TcpClient {
         } else {
             "unknown".to_string()
         }
+    }
+}
+
+impl BinaryClient for TcpClient {}
+
+#[async_trait]
+impl Client for TcpClient {
+    async fn connect(&self) -> Result<(), IggyError> {
+        TcpClient::connect(self).await
+    }
+
+    async fn disconnect(&self) -> Result<(), IggyError> {
+        TcpClient::disconnect(self).await
+    }
+
+    async fn shutdown(&self) -> Result<(), IggyError> {
+        TcpClient::shutdown(self).await
+    }
+
+    async fn subscribe_events(&self) -> Receiver<DiagnosticEvent> {
+        self.events.1.clone()
+    }
+}
+
+impl Default for TcpClient {
+    fn default() -> Self {
+        TcpClient::create(Arc::new(TcpClientConfig::default())).unwrap()
     }
 }

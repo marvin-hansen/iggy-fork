@@ -6,7 +6,7 @@ use crate::http::client::HttpClient;
 use crate::http::config::HttpClientConfig;
 use crate::quic::client::QuicClient;
 use crate::quic::config::{QuicClientConfig, QuicClientReconnectionConfig};
-use crate::tcp::config::{TcpClientConfig, TcpClientReconnectionConfig};
+use crate::tcp::config_client::{TcpClientConfig, TcpClientReconnectionConfig};
 use crate::tcp::tcp_client::TcpClient;
 use crate::utils::duration::IggyDuration;
 use std::str::FromStr;

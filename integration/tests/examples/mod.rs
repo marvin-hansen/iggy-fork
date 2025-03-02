@@ -7,7 +7,7 @@ use assert_cmd::Command;
 use iggy::client::{Client, StreamClient, SystemClient, TopicClient, UserClient};
 use iggy::clients::client::IggyClient;
 use iggy::compression::compression_algorithm::CompressionAlgorithm;
-use iggy::tcp::config::TcpClientConfig;
+use iggy::tcp::config_client::TcpClientConfig;
 use iggy::tcp::tcp_client::TcpClient;
 use iggy::users::defaults::*;
 use iggy::utils::expiry::IggyExpiry;

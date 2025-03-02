@@ -6,7 +6,7 @@ use crate::http::config::HttpClientConfigBuilder;
 use crate::partitioner::Partitioner;
 use crate::quic::client::QuicClient;
 use crate::quic::config::QuicClientConfigBuilder;
-use crate::tcp::config::TcpClientConfigBuilder;
+use crate::tcp::config_client::TcpClientConfigBuilder;
 use crate::tcp::tcp_client::TcpClient;
 use crate::utils::crypto::EncryptorKind;
 use crate::utils::duration::IggyDuration;

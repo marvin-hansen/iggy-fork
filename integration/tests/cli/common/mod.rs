@@ -7,7 +7,7 @@ use assert_cmd::prelude::CommandCargoExt;
 use async_trait::async_trait;
 use iggy::client::{Client, SystemClient, UserClient};
 use iggy::clients::client::IggyClient;
-use iggy::tcp::config::TcpClientConfig;
+use iggy::tcp::config_client::TcpClientConfig;
 use iggy::tcp::tcp_client::TcpClient;
 use iggy::users::defaults::*;
 use integration::test_server::TestServer;
