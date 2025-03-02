@@ -6,16 +6,17 @@ use crate::tcp::tcp_client::TcpClient;
 use crate::utils::duration::IggyDuration;
 use async_trait::async_trait;
 use bytes::Bytes;
+use std::sync::atomic::Ordering;
 use tracing::{error, info};
 
 #[async_trait]
 impl BinaryTransport for TcpClient {
     async fn get_state(&self) -> ClientState {
-        *self.state.lock().await
+        ClientState::from(self.state.load(Ordering::Relaxed))
     }
 
     async fn set_state(&self, state: ClientState) {
-        *self.state.lock().await = state;
+        self.state.store(state as u8, Ordering::Relaxed);
     }
 
     async fn send_with_response<T: Command>(&self, command: &T) -> Result<Bytes, IggyError> {

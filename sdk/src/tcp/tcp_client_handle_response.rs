@@ -1,7 +1,7 @@
 use crate::error::{IggyError, IggyErrorDiscriminants};
 use crate::tcp::tcp_client::TcpClient;
 use crate::tcp::tcp_connection_stream_kind::ConnectionStreamKind;
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Bytes, BytesMut};
 use tracing::{error, trace};
 
 impl TcpClient {
@@ -44,7 +44,11 @@ impl TcpClient {
         }
 
         let mut response_buffer = BytesMut::with_capacity(length as usize);
-        response_buffer.put_bytes(0, length as usize);
+        // Avoid Zeroing Buffers: Initialize the buffer without zeroing it
+        unsafe {
+            response_buffer.set_len(length as usize);
+        }
+
         stream.read(&mut response_buffer).await?;
         Ok(response_buffer.freeze())
     }

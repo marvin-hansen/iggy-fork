@@ -37,7 +37,7 @@ impl TcpClient {
         }
 
         self.set_state(ClientState::Connecting).await;
-        if let Some(connected_at) = self.connected_at.lock().await.as_ref() {
+        if let Some(connected_at) = self.connected_at.load() {
             let now = IggyTimestamp::now();
             let elapsed = now.as_micros() - connected_at.as_micros();
             let interval = self.config.reconnection.reestablish_after.as_micros();
@@ -111,7 +111,7 @@ impl TcpClient {
                 error!("Failed to get the remote address of the server: {error}",);
                 IggyError::CannotEstablishConnection
             })?;
-            self.client_address.lock().await.replace(client_address);
+            self.client_address.store(Some(client_address));
 
             if let Err(e) = stream.set_nodelay(self.config.nodelay) {
                 error!("Failed to set the nodelay option on the client: {e}, continuing...",);
@@ -174,9 +174,9 @@ impl TcpClient {
         info!(
             "{NAME} client: {client_address} has connected to server: {remote_address} at: {now}",
         );
-        self.stream.lock().await.replace(connection_stream);
+        self.stream.write().await.replace(connection_stream);
         self.set_state(ClientState::Connected).await;
-        self.connected_at.lock().await.replace(now);
+        self.connected_at.store(Some(now));
         self.publish_event(DiagnosticEvent::Connected).await;
         match &self.config.auto_login {
             AutoLogin::Disabled => {

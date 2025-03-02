@@ -1,4 +1,3 @@
-use crate::binary::{BinaryTransport, ClientState};
 use crate::error::IggyError;
 use crate::tcp::tcp_client::TcpClient;
 use crate::tcp::tcp_client_fields::{REQUEST_INITIAL_BYTES_LENGTH, RESPONSE_INITIAL_BYTES_LENGTH};
@@ -7,23 +6,16 @@ use tracing::{error, trace};
 
 impl TcpClient {
     pub(crate) async fn send_raw(&self, code: u32, payload: Bytes) -> Result<Bytes, IggyError> {
-        match self.get_state().await {
-            ClientState::Shutdown => {
-                trace!("Cannot send data. Client is shutdown.");
-                return Err(IggyError::ClientShutdown);
-            }
-            ClientState::Disconnected => {
-                trace!("Cannot send data. Client is not connected.");
-                return Err(IggyError::NotConnected);
-            }
-            ClientState::Connecting => {
-                trace!("Cannot send data. Client is still connecting.");
-                return Err(IggyError::NotConnected);
-            }
-            _ => {}
+        if self.is_shutdown() {
+            trace!("Cannot send data. Client is shutdown.");
+            return Err(IggyError::ClientShutdown);
+        }
+        if self.is_disconnected() {
+            trace!("Cannot send data. Client is not connected.");
+            return Err(IggyError::NotConnected);
         }
 
-        let mut stream = self.stream.lock().await;
+        let mut stream = self.stream.write().await;
         if let Some(stream) = stream.as_mut() {
             let payload_length = payload.len() + REQUEST_INITIAL_BYTES_LENGTH;
             trace!("Sending a TCP request with code: {code}");
