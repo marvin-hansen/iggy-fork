@@ -186,9 +186,9 @@ impl TcpSocketConfig {
 impl Default for TcpSocketConfig {
     fn default() -> Self {
         Self {
-            // 4 MB for both receive and send buffers in balanced mode
-            receive_buffer_size: 4 * 1024 * 1024,
-            send_buffer_size: 4 * 1024 * 1024,
+            // 8 MB for both receive and send buffers in balanced mode (increased from 4 MB)
+            receive_buffer_size: 8 * 1024 * 1024,
+            send_buffer_size: 8 * 1024 * 1024,
             // Enable TCP_NODELAY by default for lower latency
             nodelay: true,
             // Enable TCP_QUICKACK by default for lower latency (Linux only)
@@ -206,13 +206,14 @@ impl Default for TcpSocketConfig {
             reuse_port: true,
             // Disable TCP_CORK/TCP_NOPUSH by default for lower latency
             cork_or_nopush: false,
-            // Use balanced profile by default
-            optimization_profile: SocketOptimizationProfile::HighestThroughput,
+            // Use balanced profile by default - switching back from HighestThroughput to Balanced
+            // to maintain better latency characteristics while still having good throughput
+            optimization_profile: SocketOptimizationProfile::Balanced,
             // Buffer sizes for different optimization modes
-            latency_mode_receive_buffer_size: 8 * 1024, // 8 KB
-            latency_mode_send_buffer_size: 8 * 1024,    // 8 KB
-            throughput_mode_receive_buffer_size: 8 * 1024 * 1024, // 8 MB
-            throughput_mode_send_buffer_size: 8 * 1024 * 1024, // 8 MB
+            latency_mode_receive_buffer_size: 4 * 1024, // 4 KB (reduced from 8 KB for even lower latency)
+            latency_mode_send_buffer_size: 4 * 1024, // 4 KB (reduced from 8 KB for even lower latency)
+            throughput_mode_receive_buffer_size: 16 * 1024 * 1024, // 16 MB (increased from 8 MB)
+            throughput_mode_send_buffer_size: 16 * 1024 * 1024, // 16 MB (increased from 8 MB)
         }
     }
 }

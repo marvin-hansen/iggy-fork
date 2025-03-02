@@ -46,6 +46,14 @@ impl BenchmarkTransportProps for BenchmarkTransportCommand {
         self.inner().nodelay()
     }
 
+    fn optimize_for_throughput(&self) -> bool {
+        self.inner().optimize_for_throughput()
+    }
+
+    fn optimize_for_latency(&self) -> bool {
+        self.inner().optimize_for_latency()
+    }
+
     fn inner(&self) -> &dyn BenchmarkTransportProps {
         match self {
             BenchmarkTransportCommand::Http(args) => args,
@@ -91,6 +99,14 @@ impl BenchmarkTransportProps for HttpArgs {
         panic!("Setting nodelay for HTTP transport is not supported!")
     }
 
+    fn optimize_for_throughput(&self) -> bool {
+        panic!("Setting optimize_for_throughput for HTTP transport is not supported!")
+    }
+
+    fn optimize_for_latency(&self) -> bool {
+        panic!("Setting optimize_for_latency for HTTP transport is not supported!")
+    }
+
     fn output_command(&self) -> &Option<BenchmarkOutputCommand> {
         &self.output
     }
@@ -105,6 +121,14 @@ pub struct TcpArgs {
     /// Disable Nagle's algorithm
     #[arg(long, default_value_t = false)]
     pub nodelay: bool,
+
+    /// Optimize socket for maximum throughput
+    #[arg(long, default_value_t = false)]
+    pub optimize_for_throughput: bool,
+
+    /// Optimize socket for lowest latency
+    #[arg(long, default_value_t = false)]
+    pub optimize_for_latency: bool,
 
     /// Optional output command, used to output results (charts, raw json data) to a directory
     #[command(subcommand)]
@@ -130,6 +154,14 @@ impl BenchmarkTransportProps for TcpArgs {
 
     fn nodelay(&self) -> bool {
         self.nodelay
+    }
+
+    fn optimize_for_throughput(&self) -> bool {
+        self.optimize_for_throughput
+    }
+
+    fn optimize_for_latency(&self) -> bool {
+        self.optimize_for_latency
     }
 
     fn output_command(&self) -> &Option<BenchmarkOutputCommand> {
@@ -179,6 +211,14 @@ impl BenchmarkTransportProps for QuicArgs {
 
     fn nodelay(&self) -> bool {
         panic!("Setting nodelay for QUIC transport is not supported!")
+    }
+
+    fn optimize_for_throughput(&self) -> bool {
+        panic!("Setting optimize_for_throughput for QUIC transport is not supported!")
+    }
+
+    fn optimize_for_latency(&self) -> bool {
+        panic!("Setting optimize_for_latency for QUIC transport is not supported!")
     }
 
     fn output_command(&self) -> &Option<BenchmarkOutputCommand> {

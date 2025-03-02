@@ -3,21 +3,12 @@ use crate::tcp::tcp_client::TcpClient;
 use crate::tcp::tcp_connection_stream_kind::ConnectionStreamKind;
 use bytes::{Bytes, BytesMut};
 use std::cmp::min;
-use std::time::Instant;
 use tracing::{debug, error, instrument, trace};
 
 // Define common buffer sizes for reuse
 const SMALL_RESPONSE_THRESHOLD: u32 = 4096;
 const MEDIUM_RESPONSE_THRESHOLD: u32 = 65536; // 64KB
 const LARGE_RESPONSE_THRESHOLD: u32 = 1048576; // 1MB
-
-// Thread-local stack buffer pool sizes for different response sizes
-#[cfg(not(test))]
-thread_local! {
-    // Small buffer (4KB) for frequently used small responses
-    static SMALL_BUFFER: std::cell::RefCell<[u8; SMALL_RESPONSE_THRESHOLD as usize]> =
-        std::cell::RefCell::new([0u8; SMALL_RESPONSE_THRESHOLD as usize]);
-}
 
 impl TcpClient {
     /// Handle TCP response - optimized for both small and large payloads
@@ -75,72 +66,59 @@ impl TcpClient {
             return Ok(Bytes::new());
         }
 
-        // Optimize different response size ranges
+        // Use direct allocation for all response sizes instead of memory pools
+        // to prevent p999 and p9999 latency spikes
         let len = length as usize;
 
-        // For small responses up to 4KB, use pre-allocated stack buffer
+        // For small responses that can be read in one go, use a simple read
         if length <= SMALL_RESPONSE_THRESHOLD {
-            #[cfg(not(test))]
-            {
-                // Create a stack buffer first
-                let mut stack_buffer = [0u8; SMALL_RESPONSE_THRESHOLD as usize];
-                // Use a simple stack buffer for now - can't use thread_local with await
-                // Revisit with Arc<RefCell<>> if we need to optimize further
-                return Self::read_into_fixed_buffer(stream, &mut stack_buffer[0..len], len).await;
+            // Create a new buffer with exact capacity
+            let mut buffer = BytesMut::with_capacity(len);
+            // Set the length so we can write directly into it
+            unsafe {
+                buffer.set_len(len);
             }
 
-            #[cfg(test)]
-            {
-                let mut stack_buffer = [0u8; SMALL_RESPONSE_THRESHOLD as usize];
-                return Self::read_into_fixed_buffer(stream, &mut stack_buffer[0..len], len).await;
+            // Read directly into the buffer
+            let read_bytes = stream.read(&mut buffer).await?;
+
+            if read_bytes != len {
+                if tracing::enabled!(tracing::Level::DEBUG) {
+                    debug!(
+                        "Incomplete read: expected {} bytes, got {}",
+                        len, read_bytes
+                    );
+                }
+                // Adjust buffer to actual read size
+                unsafe {
+                    buffer.set_len(read_bytes);
+                }
             }
+
+            // Convert to Bytes and return
+            return Ok(buffer.freeze());
         }
 
-        // For medium responses (4KB-64KB), handle in chunks with single allocation
-        if length <= MEDIUM_RESPONSE_THRESHOLD {
-            return Self::read_chunked_response(stream, len, 16384).await; // 16KB chunks
-        }
+        // For medium and large responses, use the chunked reading strategy
+        // Choose an appropriate chunk size based on the response size
+        let chunk_size = if length <= MEDIUM_RESPONSE_THRESHOLD {
+            16384 // 16KB chunks for medium responses
+        } else if length <= LARGE_RESPONSE_THRESHOLD {
+            65536 // 64KB chunks for large responses
+        } else {
+            262144 // 256KB chunks for very large responses
+        };
 
-        // For large responses (64KB-1MB), handle in larger chunks
-        if length <= LARGE_RESPONSE_THRESHOLD {
-            return Self::read_chunked_response(stream, len, 65536).await; // 64KB chunks
-        }
-
-        // For very large responses (>1MB), use truly massive chunks
-        Self::read_chunked_response(stream, len, 262144).await // 256KB chunks
+        // Use the chunked response reader directly, without buffer pooling
+        Self::read_chunked_response(stream, len, chunk_size).await
     }
 
-    // Helper method to read into a fixed-size buffer
-    #[inline(always)]
-    async fn read_into_fixed_buffer(
-        stream: &mut ConnectionStreamKind,
-        buffer: &mut [u8],
-        expected_len: usize,
-    ) -> Result<Bytes, IggyError> {
-        let read_bytes = stream.read(buffer).await?;
-
-        if read_bytes != expected_len {
-            if tracing::enabled!(tracing::Level::DEBUG) {
-                debug!(
-                    "Incomplete read: expected {} bytes, got {}",
-                    expected_len, read_bytes
-                );
-            }
-        }
-
-        // Return exactly what we read
-        Ok(Bytes::copy_from_slice(&buffer[0..read_bytes]))
-    }
-
-    // Helper method to read a large response in chunks
+    // Optimized helper method to read a response in chunks
     async fn read_chunked_response(
         stream: &mut ConnectionStreamKind,
         total_len: usize,
         chunk_size: usize,
     ) -> Result<Bytes, IggyError> {
-        #[cfg(debug_assertions)]
-        let read_start = Instant::now();
-
         // Preallocate the entire buffer at once to avoid reallocation
         let mut response_buffer = BytesMut::with_capacity(total_len);
         unsafe {
@@ -150,7 +128,7 @@ impl TcpClient {
         let mut bytes_read = 0;
         let mut remaining = total_len;
 
-        // Read in chunks to handle large responses more efficiently
+        // Read in chunks to efficiently handle responses of all sizes
         while remaining > 0 {
             let to_read = min(remaining, chunk_size);
             let segment = &mut response_buffer[bytes_read..bytes_read + to_read];
@@ -168,12 +146,10 @@ impl TcpClient {
                 Ok(_) => break, // EOF, no more data
                 Err(e) => {
                     // Adjust buffer to contain only read data
-                    unsafe {
-                        response_buffer.set_len(bytes_read);
-                    }
-
-                    // Still return what we have if we've read anything
                     if bytes_read > 0 {
+                        unsafe {
+                            response_buffer.set_len(bytes_read);
+                        }
                         if tracing::enabled!(tracing::Level::DEBUG) {
                             debug!("Read error after {} bytes: {}", bytes_read, e);
                         }
@@ -189,20 +165,11 @@ impl TcpClient {
             unsafe {
                 response_buffer.set_len(bytes_read);
             }
-
             if tracing::enabled!(tracing::Level::DEBUG) {
                 debug!(
                     "Incomplete read: expected {} bytes, got {}",
                     total_len, bytes_read
                 );
-            }
-        }
-
-        #[cfg(debug_assertions)]
-        {
-            let read_time = read_start.elapsed();
-            if read_time.as_millis() > 100 && bytes_read > SMALL_RESPONSE_THRESHOLD as usize {
-                debug!("Large read: {} bytes took {:?}", bytes_read, read_time);
             }
         }
 

@@ -3,6 +3,7 @@ use crate::binary::ClientState;
 use crate::client::{AutoLogin, Client, ConnectionString};
 use crate::diagnostic::DiagnosticEvent;
 use crate::error::IggyError;
+use crate::tcp::buffer_pool;
 use crate::tcp::config_client::TcpClientConfig;
 use crate::tcp::tcp_connection_stream_kind::ConnectionStreamKind;
 use crate::utils::duration::IggyDuration;
@@ -81,6 +82,15 @@ impl TcpClient {
 
     /// Create a new TCP client based on the provided configuration.
     pub fn create(config: Arc<TcpClientConfig>) -> Result<Self, IggyError> {
+        // Initialize buffer pools to reduce allocation latency in critical path
+        // This is done lazily once for the entire application
+        static BUFFER_POOL_INITIALIZED: once_cell::sync::OnceCell<()> =
+            once_cell::sync::OnceCell::new();
+        BUFFER_POOL_INITIALIZED.get_or_init(|| {
+            buffer_pool::initialize_buffer_pools();
+            ()
+        });
+
         Ok(Self {
             config,
             client_address: AtomicCell::new(None),

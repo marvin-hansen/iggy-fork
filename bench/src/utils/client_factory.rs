@@ -1,4 +1,5 @@
 use crate::args::common::IggyBenchArgs;
+use crate::args::props::BenchmarkTransportProps;
 use integration::http_client::HttpClientFactory;
 use integration::quic_client::QuicClientFactory;
 use integration::tcp_client::TcpClientFactory;
@@ -13,6 +14,8 @@ pub fn create_client_factory(args: &IggyBenchArgs) -> Arc<dyn ClientFactory> {
         Transport::Tcp => Arc::new(TcpClientFactory {
             server_addr: args.server_address().to_owned(),
             nodelay: args.nodelay(),
+            optimize_for_throughput: args.transport_command().optimize_for_throughput(),
+            optimize_for_latency: args.transport_command().optimize_for_latency(),
         }),
         Transport::Quic => Arc::new(QuicClientFactory {
             server_addr: args.server_address().to_owned(),

@@ -394,14 +394,18 @@ pub fn create_low_latency_config() -> TcpSocketConfig {
     config.quick_ack = true; // Enable quick ACK (Linux)
     config.tcp_fastopen = true; // Fast connection establishment
 
-    // Use smaller buffers for reduced latency
-    config.latency_mode_receive_buffer_size = 4 * 1024; // 4KB
-    config.latency_mode_send_buffer_size = 4 * 1024; // 4KB
+    // Hybrid buffer approach: smaller send buffer, larger receive buffer for better responsiveness
+    config.latency_mode_receive_buffer_size = 1 * 1024 * 1024; // 1MB for receiving
+    config.latency_mode_send_buffer_size = 512 * 1024; // 512KB for sending
+
+    // Override default buffer sizes with latency mode values
+    config.receive_buffer_size = config.latency_mode_receive_buffer_size;
+    config.send_buffer_size = config.latency_mode_send_buffer_size;
 
     // Keepalive settings optimized for quick detection of dropped connections
     config.keepalive = true;
-    config.keepalive_time = 15; // 15 seconds
-    config.keepalive_interval = 5; // 5 seconds
+    config.keepalive_time = 10; // 10 seconds (reduced from 15)
+    config.keepalive_interval = 2; // 2 seconds (reduced from 5)
     config.keepalive_probes = 3; // 3 attempts
 
     config
@@ -412,19 +416,23 @@ pub fn create_high_throughput_config() -> TcpSocketConfig {
     let mut config = TcpSocketConfig::default();
     config.optimization_profile = SocketOptimizationProfile::HighestThroughput;
 
-    // Optimize for maximum data transfer
-    config.nodelay = false; // Enable Nagle's algorithm for better coalescing
-    config.cork_or_nopush = true; // Enable packet coalescing
+    // More balanced approach - enable nodelay but still use cork/nopush for coalescing when appropriate
+    config.nodelay = true; // Keep nodelay enabled to prevent potential deadlocks
+    config.cork_or_nopush = true; // Enable packet coalescing when explicitly requested
 
-    // Use massive buffers for high throughput
-    config.throughput_mode_receive_buffer_size = 16 * 1024 * 1024; // 16MB
-    config.throughput_mode_send_buffer_size = 16 * 1024 * 1024; // 16MB
+    // Use larger buffers for high throughput but avoid excessive sizes
+    config.throughput_mode_receive_buffer_size = 16 * 1024 * 1024; // 16MB - more reasonable
+    config.throughput_mode_send_buffer_size = 16 * 1024 * 1024; // 16MB - more reasonable
 
-    // Less aggressive keepalive for stable long-running connections
+    // More moderate keepalive settings to detect stalled connections faster
     config.keepalive = true;
-    config.keepalive_time = 120; // 2 minutes
-    config.keepalive_interval = 30; // 30 seconds
-    config.keepalive_probes = 8; // 8 attempts
+    config.keepalive_time = 60; // 1 minute
+    config.keepalive_interval = 15; // 15 seconds
+    config.keepalive_probes = 5; // 5 attempts
+
+    // If using custom send/receive buffer sizes, override the defaults with the throughput mode values
+    config.receive_buffer_size = config.throughput_mode_receive_buffer_size;
+    config.send_buffer_size = config.throughput_mode_send_buffer_size;
 
     config
 }
@@ -432,6 +440,7 @@ pub fn create_high_throughput_config() -> TcpSocketConfig {
 /// Public function to create a balanced socket configuration with good performance characteristics
 pub fn create_balanced_config() -> TcpSocketConfig {
     let mut config = TcpSocketConfig::default();
+    config.optimization_profile = SocketOptimizationProfile::Balanced;
 
     // Balance between latency and throughput
     config.nodelay = true; // Prefer lower latency by default
@@ -439,9 +448,15 @@ pub fn create_balanced_config() -> TcpSocketConfig {
     config.quick_ack = true;
     config.tcp_fastopen = true;
 
-    // Balanced buffer sizes
-    config.receive_buffer_size = 8 * 1024 * 1024; // 8MB
-    config.send_buffer_size = 8 * 1024 * 1024; // 8MB
+    // Enhanced balanced buffer sizes - larger than default but not as large as throughput mode
+    config.receive_buffer_size = 12 * 1024 * 1024; // 12MB (increased from 8MB)
+    config.send_buffer_size = 12 * 1024 * 1024; // 12MB (increased from 8MB)
+
+    // Use mid-sized buffers for balanced mode
+    config.latency_mode_receive_buffer_size = 8 * 1024; // 8KB (better than ultra-low latency)
+    config.latency_mode_send_buffer_size = 8 * 1024; // 8KB
+    config.throughput_mode_receive_buffer_size = 24 * 1024 * 1024; // 24MB (between default and high throughput)
+    config.throughput_mode_send_buffer_size = 24 * 1024 * 1024; // 24MB
 
     // Standard keepalive settings
     config.keepalive = true;

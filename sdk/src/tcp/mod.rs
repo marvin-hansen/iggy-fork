@@ -1,3 +1,4 @@
+pub mod buffer_pool; // Buffer pool for memory allocation optimization
 pub mod config_client;
 pub mod config_reconnection;
 pub mod config_socket;

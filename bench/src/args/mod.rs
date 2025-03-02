@@ -5,5 +5,5 @@ pub mod kinds;
 
 mod examples;
 mod output;
-mod props;
-mod transport;
+pub mod props;
+pub mod transport;

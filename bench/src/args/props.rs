@@ -26,6 +26,12 @@ pub trait BenchmarkTransportProps {
     fn validate_certificate(&self) -> bool;
     fn output_command(&self) -> &Option<BenchmarkOutputCommand>;
     fn nodelay(&self) -> bool;
+    fn optimize_for_throughput(&self) -> bool {
+        false
+    }
+    fn optimize_for_latency(&self) -> bool {
+        false
+    }
     fn inner(&self) -> &dyn BenchmarkTransportProps
     where
         Self: std::marker::Sized,
