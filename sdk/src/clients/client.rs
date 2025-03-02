@@ -29,7 +29,7 @@ use crate::models::user_info::{UserInfo, UserInfoDetails};
 use crate::models::user_status::UserStatus;
 use crate::partitioner::Partitioner;
 use crate::snapshot::{SnapshotCompression, SystemSnapshotType};
-use crate::tcp::client::TcpClient;
+use crate::tcp::tcp_client::TcpClient;
 use crate::utils::byte_size::IggyByteSize;
 use crate::utils::crypto::EncryptorKind;
 use crate::utils::duration::IggyDuration;
