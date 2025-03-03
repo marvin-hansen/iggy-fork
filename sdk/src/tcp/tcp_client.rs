@@ -3,7 +3,6 @@ use crate::binary::ClientState;
 use crate::client::{AutoLogin, Client, ConnectionString};
 use crate::diagnostic::DiagnosticEvent;
 use crate::error::IggyError;
-use crate::tcp::buffer_pool;
 use crate::tcp::config_client::TcpClientConfig;
 use crate::tcp::tcp_connection_stream_kind::ConnectionStreamKind;
 use crate::utils::duration::IggyDuration;
@@ -16,7 +15,7 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
-use tokio::sync::RwLock as TokioRwLock;
+use tokio::sync::Mutex;
 
 /// TCP client for interacting with the Iggy API.
 /// It requires a valid server address.
@@ -29,7 +28,7 @@ pub struct TcpClient {
     pub(crate) config: Arc<TcpClientConfig>,
     // Using TokioRwLock instead of Mutex to allow multiple simultaneous readers
     // This significantly reduces contention as most operations only need read access
-    pub(crate) stream: Arc<TokioRwLock<Option<ConnectionStreamKind>>>,
+    pub(crate) stream: Mutex<Option<ConnectionStreamKind>>,
     // Use atomic for the state since it's a simple enum that fits in a AtomicU8
     // which is faster than Mutex or RwLock.
     pub(crate) state: AtomicU8,
@@ -82,19 +81,10 @@ impl TcpClient {
 
     /// Create a new TCP client based on the provided configuration.
     pub fn create(config: Arc<TcpClientConfig>) -> Result<Self, IggyError> {
-        // Initialize buffer pools to reduce allocation latency in critical path
-        // This is done lazily once for the entire application
-        static BUFFER_POOL_INITIALIZED: once_cell::sync::OnceCell<()> =
-            once_cell::sync::OnceCell::new();
-        BUFFER_POOL_INITIALIZED.get_or_init(|| {
-            buffer_pool::initialize_buffer_pools();
-            ()
-        });
-
         Ok(Self {
             config,
             client_address: AtomicCell::new(None),
-            stream: Arc::new(TokioRwLock::new(None)),
+            stream: Mutex::new(None),
             state: AtomicU8::new(ClientState::Disconnected as u8),
             events: broadcast(1000),
             connected_at: AtomicCell::new(None),

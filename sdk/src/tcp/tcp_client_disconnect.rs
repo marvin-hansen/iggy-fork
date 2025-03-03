@@ -22,11 +22,8 @@ impl TcpClient {
         self.state
             .store(ClientState::Disconnected as u8, Ordering::Release);
 
-        // Acquire write lock to modify the stream
-        {
-            let mut stream_guard = self.stream.write().await;
-            *stream_guard = None; // Using None directly instead of take() as we're replacing the entire Option
-        }
+        // Takes the value out of the option
+        self.stream.lock().await.take();
 
         self.publish_event(DiagnosticEvent::Disconnected).await;
 

@@ -183,7 +183,8 @@ impl TcpClient {
         info!(
             "{NAME} client: {client_address} has connected to server: {remote_address} at: {now}",
         );
-        self.stream.write().await.replace(connection_stream);
+
+        self.stream.lock().await.replace(connection_stream);
         self.set_state(ClientState::Connected).await;
         self.connected_at.store(Some(now));
         self.publish_event(DiagnosticEvent::Connected).await;

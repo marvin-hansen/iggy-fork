@@ -17,7 +17,7 @@ impl TcpClient {
         let client_address = self.get_client_address_value_sync();
         info!("Shutting down TCP client: {client_address}");
 
-        let stream = self.stream.write().await.take();
+        let stream = self.stream.lock().await.take();
         if let Some(mut stream) = stream {
             stream.shutdown().await?;
         }
